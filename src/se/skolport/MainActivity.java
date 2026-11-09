@@ -11,9 +11,6 @@ import android.os.Bundle;
 import android.text.InputType;
 import android.view.Gravity;
 import android.view.View;
-import android.webkit.CookieManager;
-import android.webkit.WebStorage;
-import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.FrameLayout;
@@ -25,7 +22,6 @@ import java.util.Locale;
 /** Start screen: pick InfoMentor or Skola24. Long-press a button to change its address. */
 public class MainActivity extends Activity {
 
-    static final String PREFS = "skolport";
     static final String KEY_INFOMENTOR = "url_infomentor";
     static final String KEY_SKOLA24 = "url_skola24";
     static final String DEFAULT_INFOMENTOR = "https://hub.infomentor.se";
@@ -36,7 +32,11 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle state) {
         super.onCreate(state);
-        prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        prefs = Privacy.prefs(this);
+        // Fresh start (also after the app was swiped away): log out if the user asked for that.
+        if (state == null && prefs.getBoolean(Privacy.KEY_LOGOUT_ON_LEAVE, false)) {
+            Privacy.clearSessions(this);
+        }
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
@@ -72,15 +72,26 @@ public class MainActivity extends Activity {
         hint.setGravity(Gravity.CENTER);
         root.addView(hint, matchWrap(24));
 
-        Button logout = Ui.button(this, "Logga ut från allt", 16, 2);
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+
+        Button settings = Ui.button(this, "Inställningar", 16, 2);
+        settings.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { showSettings(); }
+        });
+        LinearLayout.LayoutParams sl = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 1f);
+        sl.rightMargin = Ui.dp(this, 6);
+        row.addView(settings, sl);
+
+        Button logout = Ui.button(this, "Logga ut", 16, 2);
         logout.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { confirmLogout(); }
         });
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, Ui.dp(this, 48));
-        lp.gravity = Gravity.CENTER_HORIZONTAL;
-        lp.topMargin = Ui.dp(this, 16);
-        root.addView(logout, lp);
+        LinearLayout.LayoutParams ll = new LinearLayout.LayoutParams(0, Ui.dp(this, 48), 1f);
+        ll.leftMargin = Ui.dp(this, 6);
+        row.addView(logout, ll);
+
+        root.addView(row, matchWrap(16));
 
         setContentView(root);
     }
@@ -222,24 +233,40 @@ public class MainActivity extends Activity {
     private void confirmLogout() {
         new AlertDialog.Builder(this)
                 .setTitle("Logga ut från allt?")
-                .setMessage("Inloggningar och sparad webbdata för båda tjänsterna tas bort. Adresserna ligger kvar.")
+                .setMessage("Inloggningar, sparad webbdata och webbplatser du har litat på tas bort. "
+                        + "Adresserna och inställningarna ligger kvar.")
                 .setPositiveButton("Logga ut", new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int w) { clearAll(); }
+                    @Override public void onClick(DialogInterface d, int w) {
+                        Privacy.clearSessions(MainActivity.this);
+                        Privacy.forgetTrusted(MainActivity.this);
+                        Ui.toast(MainActivity.this, "Utloggad.");
+                    }
                 })
                 .setNegativeButton("Avbryt", null)
                 .show();
     }
 
-    private void clearAll() {
-        CookieManager cm = CookieManager.getInstance();
-        cm.removeAllCookies(null);
-        cm.flush();
-        WebStorage.getInstance().deleteAllData();
-        WebView w = new WebView(this);
-        w.clearCache(true);
-        w.clearFormData();
-        w.clearHistory();
-        w.destroy();
-        Ui.toast(this, "Utloggad.");
+    private void showSettings() {
+        final String[] keys = {Privacy.KEY_LOGOUT_ON_LEAVE, Privacy.KEY_THIRD_PARTY_COOKIES};
+        String[] labels = {
+                "Logga ut automatiskt när jag lämnar en tjänst eller stänger appen",
+                "Tillåt tredjepartscookies (behövs ibland för inloggning)",
+        };
+        boolean[] checked = {prefs.getBoolean(keys[0], false), prefs.getBoolean(keys[1], false)};
+        new AlertDialog.Builder(this)
+                .setTitle("Inställningar")
+                .setMultiChoiceItems(labels, checked, new DialogInterface.OnMultiChoiceClickListener() {
+                    @Override public void onClick(DialogInterface d, int which, boolean isChecked) {
+                        prefs.edit().putBoolean(keys[which], isChecked).apply();
+                    }
+                })
+                .setNeutralButton("Glöm betrodda sidor", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        Privacy.forgetTrusted(MainActivity.this);
+                        Ui.toast(MainActivity.this, "Appen frågar igen innan andra webbplatser öppnas.");
+                    }
+                })
+                .setPositiveButton("Klar", null)
+                .show();
     }
 }

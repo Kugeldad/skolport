@@ -35,7 +35,25 @@ se.skolport
   har en särskild adress för BankID kan du skriva den i stället, t.ex. `uppsala-sso`. Väljer
   du "Välj i lista" visas skola24.se:s lista över domäner.
 - **Håll in en knapp** för att ändra eller återställa adressen.
-- **Logga ut från allt** raderar alla inloggningar och sparad webbdata. Adresserna ligger kvar.
+- **Logga ut** raderar alla inloggningar, all sparad webbdata och de webbplatser du har litat
+  på. Adresserna och inställningarna ligger kvar.
+
+## Integritet och säkerhet
+
+- **Domänen syns alltid** i titelraden. Den kortas från början (`…skola24.se`), så att den
+  avgörande delen alltid syns.
+- **Andra webbplatser:** Klickar du på en länk som leder utanför InfoMentor och Skola24 visar
+  appen domänen och frågar först: lita på och öppna, öppna i webbläsaren eller avbryt. Väljer
+  du att lita på webbplatsen frågar appen inte igen. Omdirigeringar och formulär som skickas
+  automatiskt under inloggningen räknas inte som klick och släpps igenom.
+- **Nedladdningar:** Du väljer själv var filen ska sparas. Appen hämtar filen själv över HTTPS,
+  och inloggningscookies lämnas aldrig ut till systemets nedladdningstjänst.
+- **Inställningar:**
+  - *Logga ut automatiskt när jag lämnar en tjänst eller stänger appen* (av som standard)
+  - *Tillåt tredjepartscookies* (av som standard; slå på om en inloggning inte går igenom)
+  - *Glöm betrodda sidor*
+- Appen har bara behörigheten Internet. Den saknar JavaScript-brygga, säkerhetskopiering och
+  egen maskinkod, och den har inga bibliotek från andra.
 
 ## BankID
 
@@ -61,7 +79,7 @@ samma nyckel. Höj `VERSION_CODE` i `build.sh` vid varje release.
 ## Begränsningar
 
 - Inga push-notiser. Det kräver tjänsternas egna appar.
-- Filer hämtas med systemets nedladdningshanterare till Hämtade filer.
+- Nedladdningar kräver telefonens filväljare. Saknas den går filer inte att spara.
 - Säkerheten beror på telefonens WebView-version.
 
 ## Licens

@@ -9,8 +9,8 @@ cd "$(dirname "$0")"
 
 ANDROID_JAR="${ANDROID_JAR:-/usr/lib/android-sdk/platforms/android-23/android.jar}"
 DX="$(command -v dalvik-exchange || command -v dx)"
-VERSION_CODE=4
-VERSION_NAME=1.3
+VERSION_CODE=5
+VERSION_NAME=1.4
 OUT=Skolport.apk
 
 rm -rf build && mkdir -p build/gen build/classes build/dex
