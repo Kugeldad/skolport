@@ -1,0 +1,10 @@
+# Byggfiler
+build/
+*.apk
+*.idsig
+
+# Signeringsnyckel – får aldrig checkas in
+keystore/
+*.jks
+*.keystore
+password.txt
